@@ -1,14 +1,34 @@
 # CityCare
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/Node.js-%3E%3D18-green)](backend/package.json)
+[![Expo](https://img.shields.io/badge/Expo-SDK%2054-black?logo=expo&logoColor=white)](mobile/app.json)
+[![CI](https://github.com/realEdwinJ/CityCare/actions/workflows/ci.yml/badge.svg)](https://github.com/realEdwinJ/CityCare/actions/workflows/ci.yml)
+
 A civic reporting & legislative engagement platform for Windhoek, Namibia. Built for the AWS User Group Windhoek **"For The People"** hackathon.
 
 Citizens report municipal issues (potholes, water leaks, power outages, etc.) with a photo and GPS location; an **AI automatically triages each report as Critical / Medium / Light**; duplicate reports of the same problem **merge into one ticket** with a "N citizens reported this" counter; and citizens **track the government's progress** (Received → Reviewed → Resolved). The same app lets people **rate proposed laws**, **send suggestions to ministries**, and **reach emergency services**. City officials work incoming reports from a **web admin dashboard**, and anyone can watch the city on a **public live map**.
 
----
+## Features
+
+- 📱 **Mobile app** (Expo / React Native) — report issues with photo + GPS, live map, rate laws, send ministry suggestions, one-tap **SOS**
+- 🤖 **AI triage** — every report is classified **Critical / Medium / Light** by a rule engine with an optional Google Gemini refinement layer (graceful fallback)
+- 🔁 **Duplicate merging** — reports of the same problem cluster into one ticket with a "N citizens reported this" counter (haversine distance)
+- 🏛️ **Civic engagement** — rate proposed laws, send suggestions to ministries
+- 🖥️ **Admin dashboard** — severity-sorted triage queue with status workflow (Received → Reviewed → Resolved)
+- 🗺️ **Public live map** — real Leaflet map, severity-colored pins, no login
+
+## Project documentation
+
+- [Design brief](DESIGN_BRIEF.md) — the concept and scope
+- [Hackathon plan](HACKATHON_PLAN.md) — build plan and timeline
+- [Demo script](DEMO_SCRIPT.md) — step-by-step demo walkthrough
+- [Deployment runbook](deploy/DEPLOY.md) — full AWS EC2 setup
 
 ## Contents
 - [Architecture](#architecture)
 - [Project structure](#project-structure)
+- [Tech stack](#tech-stack)
 - [Quick start (local)](#quick-start-local)
 - [Configuration](#configuration)
 - [Running the mobile app](#running-the-mobile-app)
@@ -16,6 +36,8 @@ Citizens report municipal issues (potholes, water leaks, power outages, etc.) wi
 - [Deployment to AWS EC2](#deployment-to-aws-ec2)
 - [API reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
@@ -77,6 +99,18 @@ CityCare/
 │   └── ecosystem.config.js     # PM2 process config
 └── README.md
 ```
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Mobile | Expo SDK 54, React Native, Leaflet (in WebView), AsyncStorage |
+| Backend | Node.js 18+, Express, SQLite (`better-sqlite3`), Multer |
+| AI | Keyword/rule engine + Google Gemini (optional, graceful fallback) |
+| Web surfaces | Plain HTML/JS served by Express (`/admin`, `/map`) |
+| Deployment | AWS EC2, nginx reverse proxy, PM2 |
 
 ---
 
@@ -247,3 +281,13 @@ Base path: `/api/v1`
 ---
 
 Built with Expo, Express, SQLite, Leaflet, and Google Gemini. Admin default credentials are `admin` / `changeme` — **change them before deploying.**
+
+---
+
+## Contributing
+
+Bug reports, fixes, and ideas are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community guidelines. For security issues, see [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE) © 2026 CityCare contributors

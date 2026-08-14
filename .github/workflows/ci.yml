@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  backend:
+    name: Backend (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Syntax check
+        run: node --check src/server.js && node --check src/seed.js
+      - name: Boot and health check
+        run: |
+          cp .env.example .env
+          npm run seed
+          npm start &
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:4000/health >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          echo "Server did not become healthy in time" && exit 1
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Required files present
+        run: |
+          for f in README.md LICENSE CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md; do
+            test -f "$f" || { echo "Missing $f"; exit 1; }
+          done
