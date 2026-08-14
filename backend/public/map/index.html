@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CityCare — Public map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root { --ink:#0B1F3A; --accent:#0A84FF; --line:#EDEFF2; --muted:rgba(11,31,58,0.55); }
+  * { box-sizing: border-box; }
+  body { font-family:-apple-system,"SF Pro Text",system-ui,sans-serif; margin:0; background:#dfe1e6; color:var(--ink); padding:24px; }
+  .shell { max-width:1240px; margin:0 auto; display:flex; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 8px 30px rgba(11,31,58,0.1); height:82vh; min-height:560px; }
+  .panel { width:340px; flex-shrink:0; border-right:1px solid var(--line); overflow:auto; padding:20px; }
+  .panel h1 { font-size:20px; font-weight:700; margin:0 0 4px; }
+  .sub { font-size:13px; color:var(--muted); margin-bottom:16px; }
+  .filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .pill { border:none; cursor:pointer; padding:7px 12px; border-radius:999px; font-size:13px; font-weight:600; background:rgba(11,31,58,0.06); color:var(--ink); }
+  .pill.active { background:var(--accent); color:#fff; }
+  .rcard { background:#FAFBFC; border:1px solid var(--line); border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center; margin-bottom:10px; cursor:pointer; }
+  .rcard:hover { border-color:#cfd6e0; }
+  .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .rtitle { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rmeta { font-size:12px; color:var(--muted); }
+  #map { flex:1; }
+  .legend { position:absolute; bottom:16px; right:16px; z-index:500; display:flex; gap:12px; background:#fff; padding:7px 12px; border-radius:999px; box-shadow:0 1px 6px rgba(0,0,0,0.14); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); font-weight:600; }
+  .lp { width:12px; height:12px; border-radius:50%; background:#8E8E93; display:flex; align-items:center; justify-content:center; }
+  .lp .ring { width:6px; height:6px; border:1.5px solid #fff; border-radius:50%; }
+  .lp .chk { color:#fff; font-size:8px; font-weight:800; }
+  .pin { border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; position:relative; }
+  .pin .ring { width:42%; height:42%; border:2px solid #fff; border-radius:50%; }
+  .pin .chk { color:#fff; font-size:11px; font-weight:800; }
+  .pin .badge { position:absolute; top:-8px; right:-8px; min-width:16px; height:16px; padding:0 3px; border-radius:8px; background:#1C1C1E; color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; border:1px solid #fff; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="panel">
+    <h1>Public map</h1>
+    <div class="sub">Live civic reports across Windhoek</div>
+    <div class="filters" id="filters"></div>
+    <div id="list"></div>
+  </div>
+  <div style="flex:1;position:relative">
+    <div id="map"></div>
+    <div class="legend">
+      <span><i class="lp"></i>Received</span>
+      <span><i class="lp"><i class="ring"></i></i>Reviewed</span>
+      <span><i class="lp"><i class="chk">&#10003;</i></i>Resolved</span>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SEV={CRITICAL:"#FF3B30",MEDIUM:"#FF9F0A",LIGHT:"#8E8E93"};
+const FILTERS=[["all","All"],["critical","Critical"],["Water Leak","Water"],["Power Outage","Power"],["Pothole","Roads"],["Garbage","Waste"]];
+let all=[], filter="all", markers=[];
+const map=L.map("map",{zoomControl:true,attributionControl:false}).setView([-22.57,17.083],12);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd"}).addTo(map);
+
+function iconFor(r){
+  const color=SEV[r.severity]||"#8E8E93", count=r.duplicate_count||1, size=26+Math.min(count-1,6)*3;
+  const inner=r.status==="RESOLVED"?'<div class="chk">&#10003;</div>':(r.status==="IN_PROGRESS"?'<div class="ring"></div>':"");
+  const badge=count>1?'<div class="badge">'+count+'</div>':"";
+  return L.divIcon({html:'<div class="pin" style="width:'+size+'px;height:'+size+'px;background:'+color+'">'+inner+badge+'</div>',className:"",iconSize:[size,size],iconAnchor:[size/2,size/2]});
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function statusLabel(s){return {RECEIVED:"Received",IN_PROGRESS:"Reviewed",RESOLVED:"Resolved",REJECTED:"Rejected"}[s]||"Received";}
+
+function render(){
+  document.getElementById("filters").innerHTML=FILTERS.map(([v,l])=>`<button class="pill ${filter===v?"active":""}" onclick="setFilter('${v}')">${l}</button>`).join("");
+  const rows=all.filter(r=> filter==="all"?true : filter==="critical"?r.severity==="CRITICAL":r.category===filter);
+  document.getElementById("list").innerHTML=rows.map((r,i)=>`
+    <div class="rcard" onclick="focusReport(${i})"><div class="dot" style="background:${SEV[r.severity]||"#8E8E93"}"></div>
+      <div style="flex:1;min-width:0"><div class="rtitle">${esc(r.title)}</div>
+      <div class="rmeta">${esc(r.category)} · ${statusLabel(r.status)} · ${r.duplicate_count||1} reported</div></div></div>`).join("")||'<div class="rmeta">No reports match this filter.</div>';
+  markers.forEach(m=>map.removeLayer(m)); markers=[];
+  window._rows=rows;
+  rows.forEach(r=>{
+    if(r.latitude==null) return;
+    const m=L.marker([r.latitude,r.longitude],{icon:iconFor(r)}).addTo(map);
+    m.bindPopup(`<b>${esc(r.title)}</b><br>${esc(r.category)} · ${statusLabel(r.status)}<br>${r.duplicate_count||1} citizens reported`);
+    markers.push(m);
+  });
+}
+function setFilter(v){ filter=v; render(); }
+function focusReport(i){ const r=window._rows[i]; if(r&&r.latitude!=null){ map.setView([r.latitude,r.longitude],15); markers[i]&&markers[i].openPopup(); } }
+async function load(){ try{ all=await (await fetch("/api/v1/reports/public")).json(); }catch{ all=[]; } render(); setTimeout(()=>map.invalidateSize(),200); }
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CityCare — Admin</title>
+<style>
+  :root { --ink:#0B1F3A; --accent:#0A84FF; --line:#EDEFF2; --line2:#E4E7EC; --muted:rgba(11,31,58,0.55); }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; margin: 0; background: #dfe1e6; color: var(--ink); padding: 24px; }
+  .shell { max-width: 1240px; margin: 0 auto; display: flex; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(11,31,58,0.1); min-height: 720px; }
+  .side { width: 220px; flex-shrink: 0; background: #F7F8FA; border-right: 1px solid var(--line2); padding: 24px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .brand { font-size: 17px; font-weight: 700; padding: 0 10px 20px; }
+  .brand span { font-weight: 500; color: var(--muted); font-size: 13px; }
+  .nav { cursor: pointer; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .nav.active { background: rgba(10,132,255,0.12); color: var(--accent); }
+  .main { flex: 1; padding: 28px 32px; overflow: auto; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 16px; flex-wrap: wrap; }
+  .pill { border: none; cursor: pointer; padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(11,31,58,0.06); color: var(--ink); }
+  .pill.active { background: var(--accent); color: #fff; }
+  .btn { border: 1px solid #D8DCE3; background: #fff; cursor: pointer; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .tiles { display: flex; gap: 14px; margin-bottom: 24px; }
+  .tile { flex: 1; background: #FAFBFC; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .tile .lbl { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+  .tile .val { display: flex; align-items: baseline; gap: 6px; font-size: 24px; font-weight: 700; }
+  .tile .dot { width: 8px; height: 8px; border-radius: 50%; }
+  table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th { background: #FAFBFC; text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  td { padding: 12px 14px; border-bottom: 0.5px solid var(--line); font-size: 13px; vertical-align: top; }
+  .sev { display: inline-block; padding: 3px 8px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 700; }
+  .cell-muted { color: var(--muted); }
+  .thumb { width: 56px; height: 40px; object-fit: cover; border-radius: 6px; margin-top: 6px; }
+  select { border: 1px solid #D8DCE3; border-radius: 6px; padding: 5px 6px; font-size: 12px; font-weight: 600; background: #fff; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  .card h3 { margin: 0 0 6px; }
+  input[type=text], textarea { width: 100%; padding: 9px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; margin-bottom: 10px; }
+  .primary { background: var(--accent); color: #fff; border: none; padding: 9px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .stars { color: #FF9F0A; }
+  .comment { border-left: 3px solid var(--line); padding: 4px 0 4px 12px; margin: 10px 0; }
+  .empty { color: var(--muted); padding: 30px; text-align: center; }
+  #login { max-width: 340px; margin: 100px auto; background: #fff; padding: 28px; border-radius: 16px; box-shadow: 0 8px 30px rgba(11,31,58,0.12); }
+  #login input { width: 100%; padding: 10px; margin: 6px 0 14px; border: 1px solid #ddd; border-radius: 8px; }
+  .error { color: #FF3B30; font-size: 13px; margin-top: 8px; }
+  /* map */
+  .map { position: relative; height: 420px; border-radius: 14px; overflow: hidden; background: #E9EDE7; }
+  .mblock { position: absolute; background: #DCE3DA; }
+  .mroad { position: absolute; left: 0; right: 0; height: 2px; background: #fff; }
+  .mpin { position: absolute; transform: translate(-50%,-100%) rotate(-45deg); border-radius: 50% 50% 50% 0; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h2 style="margin-top:0">CityCare Admin</h2>
+  <label>Username</label><input id="user" value="admin" onkeydown="if(event.key==='Enter')login()" />
+  <label>Password</label><input id="pass" type="password" onkeydown="if(event.key==='Enter')login()" />
+  <button class="primary" style="width:100%" onclick="login()">Sign in</button>
+  <div class="error" id="loginError"></div>
+  <div style="font-size:12px;color:var(--muted);margin-top:12px">Open this dashboard at <b>http://&lt;host&gt;:4000/admin</b> (served by the backend), not as a local file.</div>
+</div>
+
+<div class="shell" id="app" style="display:none">
+  <div class="side">
+    <div class="brand">CityCare <span>Admin</span></div>
+    <div class="nav active" id="nav-reports" onclick="switchView('reports')">Reports</div>
+    <div class="nav" id="nav-laws" onclick="switchView('laws')">Laws</div>
+    <div class="nav" id="nav-suggestions" onclick="switchView('suggestions')">Ministry Suggestions</div>
+    <div style="flex:1"></div>
+    <a href="/map" target="_blank" style="padding:10px 12px;font-size:13px;color:var(--accent);text-decoration:none">Public map ↗</a>
+    <div class="nav" onclick="logout()" style="color:var(--muted)">Sign out</div>
+  </div>
+  <div class="main" id="view"></div>
+</div>
+
+<script>
+const API = "/api/v1";
+const SEV = { CRITICAL:{label:"Critical",color:"#FF3B30"}, MEDIUM:{label:"Medium",color:"#FF9F0A"}, LIGHT:{label:"Light",color:"#8E8E93"} };
+const STAT = { RECEIVED:{label:"Received",color:"#0A84FF"}, IN_PROGRESS:{label:"Reviewed",color:"#FF9F0A"}, RESOLVED:{label:"Resolved",color:"#34C759"}, REJECTED:{label:"Rejected",color:"#8E8E93"} };
+let sevFilter = "";
+let mapView = false;
+
+function creds(){ return { "X-Admin-User": localStorage.getItem("adminUser")||"", "X-Admin-Password": localStorage.getItem("adminPassword")||"" }; }
+function authFetch(p,o={}){ return fetch(API+p,{...o, headers:{...(o.headers||{}), ...creds()}}); }
+
+async function login(){
+  const u=document.getElementById("user").value.trim(), p=document.getElementById("pass").value;
+  const err=document.getElementById("loginError"); err.textContent="";
+  if(location.protocol==="file:"){ err.textContent="This page is open as a local file. Open it at http://<host>:4000/admin instead."; return; }
+  let res;
+  try{ res=await fetch(API+"/admin/reports",{headers:{"X-Admin-User":u,"X-Admin-Password":p}}); }
+  catch(e){ err.textContent="Can't reach the server. Is the backend running on this host:4000?"; return; }
+  if(res.status===401){ err.textContent="Invalid username or password."; return; }
+  if(!res.ok){ err.textContent="Server error ("+res.status+")."; return; }
+  localStorage.setItem("adminUser",u); localStorage.setItem("adminPassword",p); showApp();
+}
+function logout(){ localStorage.removeItem("adminUser"); localStorage.removeItem("adminPassword"); location.reload(); }
+function showApp(){ document.getElementById("login").style.display="none"; document.getElementById("app").style.display="flex"; switchView("reports"); }
+
+function switchView(v){
+  ["reports","laws","suggestions"].forEach(x=>document.getElementById("nav-"+x).classList.toggle("active",x===v));
+  if(v==="reports") renderReports();
+  if(v==="laws") renderLaws();
+  if(v==="suggestions") renderSuggestions();
+}
+
+/* Reports */
+async function renderReports(){
+  const res=await authFetch("/admin/reports"); if(!res.ok) return logout();
+  const rows=await res.json();
+  const filtered = sevFilter ? rows.filter(r=>r.severity_final===sevFilter) : rows;
+  const count=(s)=>rows.filter(r=>r.severity_final===s).length;
+  const resolved=rows.filter(r=>r.status==="RESOLVED").length;
+  const sevPills=[["","All"],["CRITICAL","Critical"],["MEDIUM","Medium"],["LIGHT","Light"]]
+    .map(([v,l])=>`<button class="pill ${sevFilter===v?"active":""}" onclick="sevFilter='${v}';renderReports()">${l}</button>`).join("");
+  const tiles=[["Critical","#FF3B30",count("CRITICAL")],["Medium","#FF9F0A",count("MEDIUM")],["Light","#8E8E93",count("LIGHT")],["Resolved","#34C759",resolved]]
+    .map(([l,c,v])=>`<div class="tile"><div class="lbl">${l}</div><div class="val"><span class="dot" style="background:${c}"></span>${v}</div></div>`).join("");
+  document.getElementById("view").innerHTML=`
+    <div class="row"><h1>Reports</h1>
+      <div style="display:flex;gap:16px;align-items:center">
+        <div style="display:flex;gap:6px">${sevPills}</div>
+        <button class="btn" onclick="mapView=!mapView;renderReports()">${mapView?"Table view":"Map view"}</button>
+      </div>
+    </div>
+    <div class="tiles">${tiles}</div>
+    ${mapView?mapHtml(filtered):tableHtml(filtered)}`;
+}
+function tableHtml(rows){
+  return `<table><thead><tr>
+    <th>Severity</th><th>Report</th><th>Category</th><th>Citizens</th><th>AI summary</th><th>Location</th><th>Reported</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>{
+      const s=SEV[r.severity_final]||SEV.MEDIUM;
+      return `<tr>
+        <td><span class="sev" style="background:${s.color}">${s.label}</span></td>
+        <td><strong>${esc(r.title)}</strong>${r.image_url||r.image_path?`<br><img class="thumb" src="${r.image_url||r.image_path}">`:""}</td>
+        <td class="cell-muted">${esc(r.category)}</td>
+        <td class="cell-muted">${r.duplicate_count||1}</td>
+        <td class="cell-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.ai_summary||"—")}</td>
+        <td class="cell-muted" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.address_text||"")}</td>
+        <td class="cell-muted" style="font-size:12px">${new Date(r.created_at).toLocaleString()}</td>
+        <td><select onchange="setStatus('${r.id}',this.value)">
+          ${["RECEIVED","IN_PROGRESS","RESOLVED","REJECTED"].map(st=>`<option value="${st}" ${st===r.status?"selected":""}>${STAT[st].label}</option>`).join("")}
+        </select></td>
+      </tr>`;
+    }).join("")||`<tr><td colspan="8" class="empty">No reports.</td></tr>`}</tbody></table>`;
+}
+const BOX={north:-22.50,south:-22.64,west:16.99,east:17.14};
+function mapHtml(rows){
+  const pins=rows.filter(r=>r.location_lat!=null||r.latitude!=null).map(r=>{
+    const lat=r.location_lat??r.latitude, lng=r.location_lng??r.longitude;
+    const top=Math.max(6,Math.min(88,((BOX.north-lat)/(BOX.north-BOX.south))*100));
+    const left=Math.max(6,Math.min(92,((lng-BOX.west)/(BOX.east-BOX.west))*100));
+    const s=SEV[r.severity_final]||SEV.MEDIUM, sz=24+Math.min((r.duplicate_count||1)-1,6)*3;
+    const rev=r.status==="IN_PROGRESS"||r.status==="RESOLVED";
+    return `<div class="mpin" style="top:${top}%;left:${left}%;width:${sz}px;height:${sz}px;background:${s.color}">${rev?'<div style="position:absolute;top:32%;left:32%;transform:rotate(45deg);width:6px;height:6px;border-radius:50%;background:#fff"></div>':''}</div>`;
+  }).join("");
+  return `<div class="map">
+    <div class="mblock" style="width:50%;height:34%;top:6%;left:-4%;border-radius:40px;transform:rotate(-6deg)"></div>
+    <div class="mblock" style="width:44%;height:28%;bottom:6%;right:-6%;border-radius:60px;transform:rotate(8deg)"></div>
+    <div class="mroad" style="top:38%"></div><div class="mroad" style="top:70%"></div>${pins}</div>`;
+}
+async function setStatus(id,status){
+  await authFetch(`/admin/reports/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+  renderReports();
+}
+
+/* Laws */
+async function renderLaws(){
+  const laws=await (await fetch(API+"/laws")).json();
+  document.getElementById("view").innerHTML=`<div class="row"><h1>Laws</h1></div>
+    <div class="card"><h3>Publish a new law</h3>
+      <input type="text" id="lt" placeholder="Title"><textarea id="ls" rows="3" placeholder="Summary"></textarea>
+      <button class="primary" onclick="publishLaw()">Publish for commentary</button></div>
+    <div id="lawList">${laws.map(lawCard).join("")||'<div class="empty">No laws.</div>'}</div>`;
+  laws.forEach(l=>loadComments(l.id));
+}
+function lawCard(l){ return `<div class="card"><h3>${esc(l.title)}</h3>
+  <div class="cell-muted" style="font-size:12px">Published ${new Date(l.published_at).toLocaleDateString()}</div>
+  <p>${esc(l.summary)}</p><strong>Citizen feedback</strong><div id="c-${l.id}"><span class="cell-muted">Loading…</span></div></div>`; }
+async function loadComments(id){
+  const cs=await (await authFetch(`/admin/laws/${id}/comments`)).json();
+  const el=document.getElementById("c-"+id); if(!el) return;
+  const rated=cs.filter(c=>c.rating); const avg=rated.length?(rated.reduce((a,c)=>a+c.rating,0)/rated.length).toFixed(1):null;
+  el.innerHTML=(cs.length?`<div class="cell-muted" style="font-size:13px">${cs.length} comment(s)${avg?` · avg ${avg}★`:""}</div>`:"")+
+    (cs.map(c=>`<div class="comment">${c.rating?`<span class="stars">${"★".repeat(c.rating)}${"☆".repeat(5-c.rating)}</span> `:""}<strong>${esc(c.commenter_name||"Anonymous")}</strong><div>${esc(c.comment_text)}</div></div>`).join("")||'<div class="cell-muted">No feedback yet.</div>');
+}
+async function publishLaw(){
+  const title=document.getElementById("lt").value.trim(), summary=document.getElementById("ls").value.trim();
+  if(!title||!summary) return;
+  const r=await authFetch("/admin/laws",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,summary})});
+  if(r.ok) renderLaws();
+}
+
+/* Suggestions */
+async function renderSuggestions(){
+  const [ms,ss]=await Promise.all([fetch(API+"/ministries").then(r=>r.json()),authFetch("/admin/suggestions").then(r=>r.json())]);
+  const byId=Object.fromEntries(ms.map(m=>[m.id,m.name]));
+  document.getElementById("view").innerHTML=`<div class="row"><h1>Ministry Suggestions</h1><span class="cell-muted">${ss.length} total</span></div>
+    ${ss.map(s=>`<div class="card"><div class="cell-muted" style="font-size:12px">${esc(byId[s.ministry_id]||"")} · ${new Date(s.created_at).toLocaleString()}</div>
+      <h3>${esc(s.subject)}</h3><p>${esc(s.content)}</p>
+      <div class="cell-muted" style="font-size:13px">From ${esc(s.reporter_name||"Anonymous")} ${s.reporter_phone?"· "+esc(s.reporter_phone):""}</div></div>`).join("")||'<div class="empty">No suggestions.</div>'}`;
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+if(localStorage.getItem("adminUser")) showApp();
+</script>
+</body>
+</html>

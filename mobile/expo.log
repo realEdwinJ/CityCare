@@ -1,0 +1,17 @@
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL
+Starting project at C:\Users\beach\Desktop\NamibiaOne\mobile
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Android .\index.js ▓░░░░░░░░░░░░░░░ 11.1% ( 30/160)
+Android .\index.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.2% (414/505)
+Android .\index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.8% (844/845)
+Android Bundled 11248ms index.js (855 modules)
+Web .\index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web .\index.js ▓▓▓▓▓▓░░░░░░░░░░ 38.3% ( 98/169)
+Web .\index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.4% (358/394)
+Web Bundled 9385ms index.js (410 modules)
+Web Bundled 26ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
